@@ -28,7 +28,8 @@ const createContact = asyncHandler(async (req, res) => {
     const contact = await Contact.create({
         name,
         email,
-        phone
+        phone,
+        user_id: req.user.id
     })
     res.status(201).json({
          message: "(❁´◡`❁) Contact Created Successfully! (❁´◡`❁)",
@@ -66,6 +67,11 @@ const updateContact = asyncHandler(async (req, res) => {
         throw new Error("Contact with id '" + req.params.id + "' not found!");
     }
 
+    if (contact.user_id.toString() !== req.user.id) {
+        res.status(403);
+        throw new Error("We both know this isn't your contact😒")
+    }
+
     const updatedContact= await Contact.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
     res.status(200).json({
@@ -85,12 +91,18 @@ const deleteContact = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("Contact with id '" + req.params.id + "' not found!");
     }
-    await contact.deleteOne();
+
+    if (contact.user_id.toString() !== req.user.id) {
+        res.status(403);
+        throw new Error("Why would you want to delete someone else's contact😒")
+    }
+    await contact.deleteOne({ _id: req.params.id });
     res.status(200).json({
          message: `o(*￣▽￣*)ブ Contact #${req.params.id} Deleted Successfully! o(*￣▽￣*)ブ`,
          deleted_contact: contact,
          port: process.env.PORT
         });
+
 });
 
 module.exports = { getContact, createContact, updateContact, getIdContact, deleteContact }

@@ -68,11 +68,12 @@ const loginUser = asyncHandler ( async (req, res) => {
                 id: user.id
             }
         }, process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "15m"}
+        {expiresIn: "5m"}
         );
         res.status(200).json({
             message: "Successfully Validated👍",
             accessToken: accessToken,
+            expires_in: "5 minutes",
             port: process.env.PORT
         })
     } else {
@@ -80,6 +81,47 @@ const loginUser = asyncHandler ( async (req, res) => {
         throw new Error("Invalid email and password combination!")
     }
 });
+
+
+//@desc Login User
+//@route POST /login
+//@access public
+
+const refreshUser = asyncHandler ( async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        res.status(400);
+        throw new Error("All fields are mandatory!");
+    }
+
+    const user = await User.findOne({ email });
+
+    // Password Comparison
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+        const accessToken = jwt.sign({
+            user: {
+                username: user.username,
+                email: user.email,
+                id: user.id
+            }
+        }, process.env.ACCESS_TOKEN_SECRET,
+        {expiresIn: "20m"}
+        );
+        res.status(200).json({
+            message: "Successfully Validated👍",
+            accessToken: accessToken,
+            expires_in: "20 minutes😉",
+            port: process.env.PORT
+        })
+    } else {
+        res.status(401);
+        throw new Error("Invalid email and password combination!")
+    }
+});
+
+
 
 //@desc Current User Info
 //@route GET /current
@@ -93,4 +135,4 @@ const currentUser = asyncHandler ( async (req, res) => {
     })
 });
 
-module.exports = { registerUser, loginUser, currentUser };
+module.exports = { registerUser, loginUser, currentUser, refreshUser };
